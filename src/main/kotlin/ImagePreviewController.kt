@@ -6,8 +6,9 @@ import tornadofx.Controller
 import tornadofx.warning
 import java.io.File
 import java.io.FileInputStream
+import kotlin.math.min
 
-class ImagePreviewController: Controller() {
+class ImagePreviewController : Controller() {
 
     companion object {
         const val RATIO = 16.0 / 9.0
@@ -27,17 +28,16 @@ class ImagePreviewController: Controller() {
 
     private var isTall: Boolean = true
 
-
-
     fun loadImage(file: File) {
         try {
-            loadImage(Image(FileInputStream(file)))
+            val stream = FileInputStream(file)
+            loadImage(Image(stream))
         } catch (e: Exception) {
             warning("File error", "Could not open ${file.name}")
         }
     }
 
-    fun loadImage(image: Image) {
+    private fun loadImage(image: Image) {
         imageView.apply { // don't listen for drag before we have an image
             setOnMouseDragged { onMouseDragged(it) }
             setOnMousePressed { onMouseDragStarted(it) }
@@ -64,7 +64,7 @@ class ImagePreviewController: Controller() {
         dragOriginY = event.y
 
         scaleFactor =
-            Math.min(imageView.fitWidth / imageView.viewport.width, imageView.fitHeight / imageView.viewport.height)
+            min(imageView.fitWidth / imageView.viewport.width, imageView.fitHeight / imageView.viewport.height)
     }
 
     private fun getValidDraggedViewport(
@@ -76,7 +76,7 @@ class ImagePreviewController: Controller() {
         //min x is zero, max x is imagewidth - viewport width
         val minX = 0.0
         val maxX =
-            image.width - originalViewport.width // if viewport and image are same width, zero variance in x is exactly what we want
+            image.width - originalViewport.width // e.g. if viewport and image are same width, zero variance in x is exactly what we want
 
         val idealX = originalViewport.minX + desiredXOffset
 
@@ -96,7 +96,7 @@ class ImagePreviewController: Controller() {
         val h = image.height
         isTall = w / h <= RATIO
 
-        val ret = if (w / h < RATIO) { //too tall
+        return if (w / h < RATIO) { //too tall
             val newHeight = w / RATIO
 
             val topBound = (h - newHeight) / 2
@@ -109,8 +109,6 @@ class ImagePreviewController: Controller() {
 
             Rectangle2D(leftBound, 0.0, newWidth, h)
         }
-
-        return ret
     }
 
 }

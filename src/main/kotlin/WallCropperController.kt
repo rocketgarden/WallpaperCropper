@@ -5,7 +5,7 @@ import tornadofx.*
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-class WallCropperController: Controller() {
+class WallCropperController : Controller() {
 
     val cropper: ImageFileCropper by inject()
     val previewController: ImagePreviewController by inject()
@@ -14,9 +14,8 @@ class WallCropperController: Controller() {
     private var fileList = emptyList<File>()
     private var index = 0
 
-    val currentFile: File?
+    private val currentFile: File?
         get() = if (index < fileList.size) fileList[index] else null
-
 
     val browseDirText = Text("Not selected")
     val outputDirText = Text("Not selected")
@@ -47,8 +46,8 @@ class WallCropperController: Controller() {
         }
     }
 
-    val trashButton = Button().apply{
-    text = "Trash"
+    val trashButton = Button().apply {
+        text = "Trash"
         actionEvents().debounce(200, TimeUnit.MILLISECONDS).subscribe { trashButtonPress() }
         style {
             padding = box(5.px)
@@ -66,6 +65,7 @@ class WallCropperController: Controller() {
             onBrowseDirectoryChosen(browseDir)
         }
         currentFile?.let { previewController.loadImage(it) }
+        System.gc()
     }
 
     private fun skipButtonPress() {
@@ -124,6 +124,7 @@ class WallCropperController: Controller() {
                 fileList = it.toList()
                 index = 0
                 previewController.loadImage(fileList[0])
+                println("Loaded ${fileList[0].name}")
             } else {
                 warning("No images", "No images found")
             }

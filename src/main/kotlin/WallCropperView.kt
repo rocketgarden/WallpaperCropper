@@ -1,19 +1,13 @@
-import com.github.thomasnield.rxkotlinfx.actionEvents
 import javafx.geometry.Pos
-import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
-import javafx.scene.text.Text
 import tornadofx.*
-import java.io.File
-import java.io.FileInputStream
-import java.util.concurrent.TimeUnit
 
 
 class WallCropperView : View() {
 
-    val mainController: WallCropperController = WallCropperController()
-    val previewController: ImagePreviewController = ImagePreviewController()
+    private val mainController: WallCropperController by inject()
+    private val previewController: ImagePreviewController by inject()
 
     override val root = vbox {
         spacing = 10.0

@@ -1,6 +1,5 @@
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.JpegWriter
-import com.sksamuel.scrimage.nio.PngWriter
 import javafx.geometry.Rectangle2D
 import tornadofx.Controller
 import java.io.File
@@ -26,17 +25,16 @@ class ImageFileCropper: Controller() {
         return moveFile(file, outputDir, TRASH_DIR)
     }
 
-    fun errorImage(file: File): Boolean {
+    private fun errorImage(file: File): Boolean {
         return moveFile(file, outputDir, ERROR_DIR)
     }
 
-    fun backupImage(file: File): Boolean {
+    private fun backupImage(file: File): Boolean {
         return moveFile(file, outputDir, BACKUP_DIR)
     }
 
     fun cropImage(file: File, rect: Rectangle2D) {
         val jpgName = file.name.substringBeforeLast(".") + ".jpg"
-        val pngName = file.name.substringBeforeLast(".") + ".png"
 
         val outFile = File(outputDir, "$CROPPED_DIR\\$jpgName")
         outFile.parentFile.mkdirs()
@@ -45,7 +43,7 @@ class ImageFileCropper: Controller() {
             try {
                 val canvas = ImmutableImage.create(rect.width.toInt(), rect.height.toInt())
                 val oldImage = ImmutableImage.loader().fromFile(file)
-                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(JpegWriter.compression(90),  outFile)
+                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(JpegWriter.NoCompression,  outFile)
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -53,7 +51,7 @@ class ImageFileCropper: Controller() {
             }
         } ui {success ->
             val couldMove = if(success) {
-//                backupImage(file)
+                backupImage(file)
                 true
             } else {
                 System.err.println("Couldn't crop image ${file.name}")
@@ -66,7 +64,6 @@ class ImageFileCropper: Controller() {
 
         }
     }
-
 
     private fun moveFile(file: File, baseDir: File, folderName: String): Boolean {
         val dest = File(baseDir, "$folderName\\${file.name}")
