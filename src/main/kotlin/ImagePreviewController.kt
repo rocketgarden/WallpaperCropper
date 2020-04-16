@@ -2,46 +2,43 @@ import javafx.geometry.Rectangle2D
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
+import tornadofx.Controller
+import tornadofx.warning
+import java.io.File
+import java.io.FileInputStream
 
-class ImagePreviewController {
+class ImagePreviewController: Controller() {
 
     companion object {
         const val RATIO = 16.0 / 9.0
     }
 
-    private lateinit var image: Image
-    var dragOriginX = 0.0
-    var dragOriginY = 0.0
-    var scaleFactor = 1.0
-
-    var originalViewport = Rectangle2D(0.0, 0.0, 0.0, 0.0)
-
-    var isTall: Boolean = true
-
     val imageView = ImageView().apply {
         fitWidth = 1280.0
         fitHeight = 720.0
         isPreserveRatio = true
+
     }
 
-    fun onMouseDragged(event: MouseEvent) {
-        var xOffset = dragOriginX - event.x
-        var yOffset = dragOriginY - event.y
+    private lateinit var image: Image
+    private var dragOriginX = 0.0
+    private var dragOriginY = 0.0
+    private var scaleFactor = 1.0
 
-        imageView.viewport = getValidDraggedViewport(image, originalViewport, xOffset / scaleFactor, yOffset / scaleFactor)
-    }
+    private var isTall: Boolean = true
 
-    fun onMouseDragStarted(event: MouseEvent) {
-        dragOriginX = event.x
-        dragOriginY = event.y
 
-        originalViewport = imageView.viewport.copy()
 
-        scaleFactor = Math.min(imageView.fitWidth/originalViewport.width, imageView.fitHeight/originalViewport.height)
+    fun loadImage(file: File) {
+        try {
+            loadImage(Image(FileInputStream(file)))
+        } catch (e: Exception) {
+            warning("File error", "Could not open ${file.name}")
+        }
     }
 
     fun loadImage(image: Image) {
-        imageView.apply {
+        imageView.apply { // don't listen for drag before we have an image
             setOnMouseDragged { onMouseDragged(it) }
             setOnMousePressed { onMouseDragStarted(it) }
         }
@@ -51,10 +48,35 @@ class ImagePreviewController {
         imageView.viewport = buildInitialViewport(image)
     }
 
-    private fun getValidDraggedViewport(image: Image, originalViewport: Rectangle2D, desiredXOffset: Double, desiredYOffset: Double): Rectangle2D{
+    private fun onMouseDragged(event: MouseEvent) {
+        val xOffset = dragOriginX - event.x
+        val yOffset = dragOriginY - event.y
+
+        dragOriginX = event.x
+        dragOriginY = event.y
+
+        imageView.viewport =
+            getValidDraggedViewport(image, imageView.viewport, xOffset / scaleFactor, yOffset / scaleFactor)
+    }
+
+    private fun onMouseDragStarted(event: MouseEvent) {
+        dragOriginX = event.x
+        dragOriginY = event.y
+
+        scaleFactor =
+            Math.min(imageView.fitWidth / imageView.viewport.width, imageView.fitHeight / imageView.viewport.height)
+    }
+
+    private fun getValidDraggedViewport(
+        image: Image,
+        originalViewport: Rectangle2D,
+        desiredXOffset: Double,
+        desiredYOffset: Double
+    ): Rectangle2D {
         //min x is zero, max x is imagewidth - viewport width
         val minX = 0.0
-        val maxX = image.width - originalViewport.width // if viewport and image are same width, zero variance in x is exactly what we want
+        val maxX =
+            image.width - originalViewport.width // if viewport and image are same width, zero variance in x is exactly what we want
 
         val idealX = originalViewport.minX + desiredXOffset
 
