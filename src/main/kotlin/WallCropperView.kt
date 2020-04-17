@@ -9,7 +9,9 @@ import tornadofx.*
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-
+/**
+ * Primary view for main screen of app.
+ */
 class WallCropperView : View() {
 
     private val mainController: WallCropperController by inject()
@@ -60,6 +62,7 @@ class WallCropperView : View() {
 
             skipDirButton = button {
                 text = "Skip"
+                //debounce so we don't just silently skip an image on a misclick
                 actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.skipButtonPress() }
                 style {
                     padding = box(5.px)

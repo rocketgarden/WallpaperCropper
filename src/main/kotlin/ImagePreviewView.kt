@@ -4,6 +4,9 @@ import javafx.scene.image.ImageView
 import tornadofx.View
 import tornadofx.vbox
 
+/**
+ * View that just holds the draggable image preview component
+ */
 class ImagePreviewView : View() {
 
     companion object {

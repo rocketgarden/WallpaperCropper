@@ -7,6 +7,9 @@ import java.io.File
 import java.io.FileInputStream
 import kotlin.math.min
 
+/**
+ * Controller for draggable image preview
+ */
 class ImagePreviewController : Controller() {
 
     private val view: ImagePreviewView by inject()
@@ -18,7 +21,6 @@ class ImagePreviewController : Controller() {
     private var dragOriginX = 0.0
     private var dragOriginY = 0.0
     private var scaleFactor = 1.0
-
 
     private var image: Image? = null
     var viewport: Rectangle2D = Rectangle2D(0.0, 0.0, 0.0, 0.0)
@@ -37,12 +39,14 @@ class ImagePreviewController : Controller() {
     fun clearImage() {
         this.image = null
         view.loadImage(null)
-        System.gc()
+        System.gc() //call garbage collector so references to old files get closed and we can move them
     }
 
     fun onMouseDragged(event: MouseEvent) {
-        val xOffset = dragOriginX - event.x
-        val yOffset = dragOriginY - event.y
+        val xDelta = dragOriginX - event.x
+        val yDelta = dragOriginY - event.y
+        // This subtraction seems backwards since we're inverting the movement
+        // a drag e.g. up and to the left actually moves the viewport down and right
 
         dragOriginX = event.x
         dragOriginY = event.y
@@ -52,8 +56,8 @@ class ImagePreviewController : Controller() {
                 getValidDraggedViewport(
                     it,
                     viewport,
-                    xOffset / scaleFactor,
-                    yOffset / scaleFactor
+                    xDelta / scaleFactor,
+                    yDelta / scaleFactor
                 )
             )
         }
@@ -64,6 +68,7 @@ class ImagePreviewController : Controller() {
         dragOriginY = event.y
     }
 
+    // Function to make sure the viewport doesn't go outside the bounds of the image
     private fun getValidDraggedViewport(
         image: Image,
         originalViewport: Rectangle2D,
@@ -73,7 +78,8 @@ class ImagePreviewController : Controller() {
         //min x is zero, max x is imagewidth - viewport width
         val minX = 0.0
         val maxX =
-            image.width - originalViewport.width // e.g. if viewport and image are same width, zero variance in x is exactly what we want
+            image.width - originalViewport.width
+        // e.g. if viewport and image are same width, zero variance in x is exactly what we want
 
         val idealX = originalViewport.minX + desiredXOffset
 
@@ -115,8 +121,11 @@ class ImagePreviewController : Controller() {
     private fun updateImage(image: Image?, viewport: Rectangle2D) {
         this.image = image
         view.loadImage(image)
+
         updateViewport(viewport)
 
+        // Need to track scaling factor so we can convert [Distance dragged across preview]
+        // into [Distance to move viewport across fullsize image]
         scaleFactor = min(ImagePreviewView.WIDTH / viewport.width, ImagePreviewView.HEIGHT / viewport.height)
     }
 

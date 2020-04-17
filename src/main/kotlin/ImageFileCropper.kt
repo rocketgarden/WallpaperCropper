@@ -45,6 +45,7 @@ class ImageFileCropper {
                 val canvas = ImmutableImage.create(rect.width.toInt(), rect.height.toInt())
                 val oldImage = ImmutableImage.loader().fromFile(file)
                 canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(JpegWriter.compression(95),  outFile)
+                // nb: the JpegWriter.NO_COMPRESSION doesn't seem to work properly and gives bad compression sometimes
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
