@@ -1,13 +1,28 @@
+import com.github.thomasnield.rxkotlinfx.actionEvents
+import com.github.thomasnield.rxkotlinfx.observeOnFx
 import javafx.geometry.Pos
+import javafx.scene.control.Button
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
+import javafx.scene.text.Text
 import tornadofx.*
+import java.io.File
+import java.util.concurrent.TimeUnit
 
 
 class WallCropperView : View() {
 
     private val mainController: WallCropperController by inject()
-    private val previewController: ImagePreviewController by inject()
+
+    private lateinit var browseDirButton: Button
+    private lateinit var outputDirButton: Button
+
+    private lateinit var browseDirText: Text
+    private lateinit var outputDirText: Text
+
+    private lateinit var skipDirButton: Button
+    private lateinit var cropDirButton: Button
+    private lateinit var trashDirButton: Button
 
     override val root = vbox {
         spacing = 10.0
@@ -16,19 +31,25 @@ class WallCropperView : View() {
             spacing = 10.0
             alignment = Pos.BASELINE_CENTER
 
-            add(mainController.browseButton)
-            add(mainController.browseDirText)
+            browseDirButton = button {
+                text = "Choose Browse Directory"
+                action { mainController.pickBrowseDirectory() }
+            }
+            browseDirText = text("Not selected")
         }
 
         hbox {
             spacing = 10.0
             alignment = Pos.BASELINE_CENTER
 
-            add(mainController.outputButton)
-            add(mainController.outputDirText)
+            outputDirButton = button {
+                text = "Choose Browse Directory"
+                action { mainController.pickOutputDirectory() }
+            }
+            outputDirText = text("Not selected")
         }
 
-        add(previewController.imageView)
+        add(find(ImagePreviewView::class))
 
         hbox {
             style {
@@ -37,14 +58,50 @@ class WallCropperView : View() {
             spacing = 50.0
             alignment = Pos.BASELINE_CENTER
 
-            add(mainController.skipButton)
+            skipDirButton = button {
+                text = "Skip"
+                actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.skipButtonPress() }
+                style {
+                    padding = box(5.px)
+                }
+            }
 
-            add(mainController.cropButton.apply {
+            cropDirButton = button {
+                text = "Crop"
+                actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.cropButtonPress() }
+                style {
+                    padding = box(5.px, 30.px)
+                }
                 shortcut(KeyCodeCombination(KeyCode.SPACE))
-            })
+            }
 
-            add(mainController.trashButton)
+            trashDirButton = button {
+                text = "Trash"
+                actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.trashButtonPress() }
+                style {
+                    padding = box(5.px)
+                }
+            }
         }
+    }
+
+    override fun onBeforeShow() {
+        super.onBeforeShow()
+
+        mainController.onBrowseDirectoryChosen(File(".\\picdir"))
+        mainController.onOutputDirectoryChosen(File(".\\testout"))
+    }
+
+    fun updateBrowseDirText(text: String) {
+        browseDirText.text = text
+    }
+
+    fun updateOutputDirText(text: String) {
+        outputDirText.text = text
+    }
+
+    fun updateWindowTitle(text: String) {
+        title = text
     }
 }
 

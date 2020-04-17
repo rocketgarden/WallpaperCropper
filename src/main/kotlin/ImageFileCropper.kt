@@ -1,11 +1,12 @@
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.JpegWriter
 import javafx.geometry.Rectangle2D
-import tornadofx.Controller
+import tornadofx.runAsync
+import tornadofx.ui
 import java.io.File
 import kotlin.math.roundToInt
 
-class ImageFileCropper: Controller() {
+class ImageFileCropper {
 
     var outputDir: File = File("./")
 
@@ -43,7 +44,7 @@ class ImageFileCropper: Controller() {
             try {
                 val canvas = ImmutableImage.create(rect.width.toInt(), rect.height.toInt())
                 val oldImage = ImmutableImage.loader().fromFile(file)
-                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(JpegWriter.NoCompression,  outFile)
+                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(JpegWriter.compression(95),  outFile)
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -69,7 +70,7 @@ class ImageFileCropper: Controller() {
         val dest = File(baseDir, "$folderName\\${file.name}")
         dest.parentFile.mkdirs()
         val moved = file.renameTo(dest)
-        if (!moved) println("Warning: Couldn't move file ${file.name} to $folderName")
+        if (!moved) println("Warning: Couldn't move file ${file.path} to $dest")
         return moved
     }
 }

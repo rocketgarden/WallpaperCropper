@@ -1,14 +1,13 @@
-import com.github.thomasnield.rxkotlinfx.actionEvents
-import javafx.scene.control.Button
-import javafx.scene.text.Text
-import tornadofx.*
+import tornadofx.Controller
+import tornadofx.chooseDirectory
+import tornadofx.warning
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 class WallCropperController : Controller() {
 
-    val cropper: ImageFileCropper by inject()
-    val previewController: ImagePreviewController by inject()
+    private val view: WallCropperView by inject()
+    private val previewController: ImagePreviewController by inject()
+    private val cropper: ImageFileCropper = ImageFileCropper()
 
     private var browseDir: File? = null
     private var fileList = emptyList<File>()
@@ -17,81 +16,41 @@ class WallCropperController : Controller() {
     private val currentFile: File?
         get() = if (index < fileList.size) fileList[index] else null
 
-    val browseDirText = Text("Not selected")
-    val outputDirText = Text("Not selected")
-
-    val browseButton = Button().apply {
-        text = "Choose Browse Directory"
-        action { pickBrowseDirectory() }
-    }
-
-    val outputButton = Button().apply {
-        text = "Choose Browse Directory"
-        action { pickOutputDirectory() }
-    }
-
-    val skipButton = Button().apply {
-        text = "Skip"
-        actionEvents().debounce(200, TimeUnit.MILLISECONDS).subscribe { skipButtonPress() }
-        style {
-            padding = box(5.px)
-        }
-    }
-
-    val cropButton = Button().apply {
-        text = "Crop"
-        actionEvents().debounce(200, TimeUnit.MILLISECONDS).subscribe { cropButtonPress() }
-        style {
-            padding = box(5.px, 30.px)
-        }
-    }
-
-    val trashButton = Button().apply {
-        text = "Trash"
-        actionEvents().debounce(200, TimeUnit.MILLISECONDS).subscribe { trashButtonPress() }
-        style {
-            padding = box(5.px)
-        }
-    }
-
-    init {
-        onBrowseDirectoryChosen(File(".\\picdir"))
-        onOutputDirectoryChosen(File(".\\testout"))
-    }
 
     private fun nextImage() {
         index = (index + 1)
         if (index >= fileList.size) {
             onBrowseDirectoryChosen(browseDir)
         }
-        currentFile?.let { previewController.loadImage(it) }
-        System.gc()
+        loadFile(index)
     }
 
-    private fun skipButtonPress() {
+    fun skipButtonPress() {
         currentFile?.let {
-            nextImage()
+            previewController.clearImage()
             cropper.setAsideImage(it)
+            nextImage()
         }
     }
 
-    private fun trashButtonPress() {
+    fun trashButtonPress() {
         currentFile?.let {
-            nextImage()
+            previewController.clearImage()
             cropper.trashImage(it)
-        }
-    }
-
-    private fun cropButtonPress() {
-        currentFile?.let {
-            val cropRect = previewController.imageView.viewport.copy()
             nextImage()
-            cropper.cropImage(it, cropRect)
         }
     }
 
+    fun cropButtonPress() {
+        currentFile?.let {
+            val cropRect = previewController.viewport.copy()
+            previewController.clearImage()
+            cropper.cropImage(it, cropRect)
+            nextImage()
+        }
+    }
 
-    private fun pickOutputDirectory() {
+    fun pickOutputDirectory() {
         var dir: File? = null
         if (fileList.isNotEmpty()) {
             dir = fileList[0].parentFile
@@ -99,14 +58,14 @@ class WallCropperController : Controller() {
         onOutputDirectoryChosen(chooseDirectory(initialDirectory = dir))
     }
 
-    private fun onOutputDirectoryChosen(file: File?) {
+    fun onOutputDirectoryChosen(file: File?) {
         file?.let {
             cropper.outputDir = it
-            outputDirText.text = it.path
+            view.updateOutputDirText(it.path)
         }
     }
 
-    private fun pickBrowseDirectory() {
+    fun pickBrowseDirectory() {
         var dir: File? = null
         if (fileList.isNotEmpty()) {
             dir = fileList[0].parentFile
@@ -114,21 +73,26 @@ class WallCropperController : Controller() {
         onBrowseDirectoryChosen(chooseDirectory(initialDirectory = dir))
     }
 
-    private fun onBrowseDirectoryChosen(file: File?) {
+    fun onBrowseDirectoryChosen(file: File?) {
         browseDir = file
         file?.let {
-            browseDirText.text = it.path
+            view.updateBrowseDirText(it.path)
         }
         file?.listFiles(::isValidImage)?.let {
             if (it.isNotEmpty()) {
                 fileList = it.toList()
                 index = 0
-                previewController.loadImage(fileList[0])
-                println("Loaded ${fileList[0].name}")
+                loadFile(index)
+//                println("Loaded ${fileList[0].name}")
             } else {
                 warning("No images", "No images found")
             }
         }
+    }
+
+    private fun loadFile(index: Int) {
+        currentFile?.let { previewController.loadImage(it) }
+        view.updateWindowTitle("[${index + 1}/${fileList.size}] ${currentFile?.name}")
     }
 
     private fun isValidImage(file: File): Boolean {
