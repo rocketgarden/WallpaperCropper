@@ -22,13 +22,14 @@ class ImagePreviewController : Controller() {
     private var dragOriginY = 0.0
     private var scaleFactor = 1.0
 
+    private var stream: FileInputStream? = null
     private var image: Image? = null
     var viewport: Rectangle2D = Rectangle2D(0.0, 0.0, 0.0, 0.0)
         private set
 
     fun loadImage(file: File) {
         try {
-            val stream = FileInputStream(file)
+            stream = FileInputStream(file) //persist this so we can close it
             val image = Image(stream)
             updateImage(image, buildInitialViewport(image))
         } catch (e: Exception) {
@@ -39,7 +40,7 @@ class ImagePreviewController : Controller() {
     fun clearImage() {
         this.image = null
         view.loadImage(null)
-        System.gc() //call garbage collector so references to old files get closed and we can move them
+        stream?.close()
     }
 
     fun onMouseDragged(event: MouseEvent) {
