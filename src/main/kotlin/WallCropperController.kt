@@ -43,7 +43,7 @@ class WallCropperController : Controller() {
 
     fun cropButtonPress() {
         currentFile?.let {
-            val cropRect = previewController.viewport.copy()
+            val cropRect = previewController.cropRect
             previewController.clearImage()
             cropper.cropImage(it, cropRect)
             nextImage()

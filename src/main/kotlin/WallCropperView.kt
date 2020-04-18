@@ -51,8 +51,6 @@ class WallCropperView : View() {
             outputDirText = text("Not selected")
         }
 
-        add(find(ImagePreviewView::class))
-
         hbox {
             style {
                 padding = box(30.px, 5.px)
@@ -60,10 +58,9 @@ class WallCropperView : View() {
             spacing = 50.0
             alignment = Pos.BASELINE_CENTER
 
-            skipDirButton = button {
-                text = "Skip"
-                //debounce so we don't just silently skip an image on a misclick
-                actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.skipButtonPress() }
+            trashDirButton = button {
+                text = "Trash"
+                actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.trashButtonPress() }
                 style {
                     padding = box(5.px)
                 }
@@ -78,14 +75,17 @@ class WallCropperView : View() {
                 shortcut(KeyCodeCombination(KeyCode.SPACE))
             }
 
-            trashDirButton = button {
-                text = "Trash"
-                actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.trashButtonPress() }
+            skipDirButton = button {
+                text = "Skip"
+                //debounce so we don't just silently skip an image on a misclick
+                actionEvents().debounce(200, TimeUnit.MILLISECONDS).observeOnFx().subscribe { mainController.skipButtonPress() }
                 style {
                     padding = box(5.px)
                 }
             }
         }
+
+        add(find(ImagePreviewView::class))
     }
 
     override fun onBeforeShow() {

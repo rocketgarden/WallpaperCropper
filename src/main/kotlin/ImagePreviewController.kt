@@ -24,12 +24,14 @@ class ImagePreviewController : Controller() {
 
     private var stream: FileInputStream? = null
     private var image: Image? = null
-    var viewport: Rectangle2D = Rectangle2D(0.0, 0.0, 0.0, 0.0)
-        private set
+    private var viewport: Rectangle2D = Rectangle2D(0.0, 0.0, 0.0, 0.0)
+
+    val cropRect: Rectangle2D
+        get() = viewport.scale(1/scaleFactor) // reverse the scaling back to full size when we crop
 
     fun loadImage(file: File) {
         try {
-            stream = FileInputStream(file) //persist this so we can close it
+            stream = FileInputStream(file) // save this so we can close it
             val image = Image(stream)
             updateImage(image, buildInitialViewport(image))
         } catch (e: Exception) {
@@ -44,10 +46,8 @@ class ImagePreviewController : Controller() {
     }
 
     fun onMouseDragged(event: MouseEvent) {
-        val xDelta = dragOriginX - event.x
-        val yDelta = dragOriginY - event.y
-        // This subtraction seems backwards since we're inverting the movement
-        // a drag e.g. up and to the left actually moves the viewport down and right
+        val xDelta = event.x - dragOriginX
+        val yDelta = event.y - dragOriginY
 
         dragOriginX = event.x
         dragOriginY = event.y
@@ -57,8 +57,8 @@ class ImagePreviewController : Controller() {
                 getValidDraggedViewport(
                     it,
                     viewport,
-                    xDelta / scaleFactor,
-                    yDelta / scaleFactor
+                    xDelta,
+                    yDelta
                 )
             )
         }
@@ -76,16 +76,14 @@ class ImagePreviewController : Controller() {
         desiredXOffset: Double,
         desiredYOffset: Double
     ): Rectangle2D {
-        //min x is zero, max x is imagewidth - viewport width
         val minX = 0.0
-        val maxX =
-            image.width - originalViewport.width
-        // e.g. if viewport and image are same width, zero variance in x is exactly what we want
+        val maxX = image.width*scaleFactor - originalViewport.width
+        // e.g. if viewport and image preview are same width, zero variance in x is exactly what we want
 
         val idealX = originalViewport.minX + desiredXOffset
 
         val minY = 0.0
-        val maxY = image.height - originalViewport.height
+        val maxY = image.height*scaleFactor - originalViewport.height
 
         val idealY = originalViewport.minY + desiredYOffset
 
@@ -99,18 +97,17 @@ class ImagePreviewController : Controller() {
         val w = image.width
         val h = image.height
 
+        scaleFactor = min(ImagePreviewView.WIDTH / image.width, ImagePreviewView.HEIGHT / image.height)
+        println("scaleFactor: %.2f".format(scaleFactor))
+
         return if (w / h < RATIO) { //too tall
-            val newHeight = w / RATIO
-
-            val topBound = (h - newHeight) / 2
-
-            Rectangle2D(0.0, topBound, w, newHeight)
+            val width = w * scaleFactor
+            val height = width / RATIO
+            Rectangle2D(0.0, 0.0, width, height)
         } else {
-            val newWidth = h * RATIO
-
-            val leftBound = (w - newWidth) / 2
-
-            Rectangle2D(leftBound, 0.0, newWidth, h)
+            val height = h * scaleFactor
+            val width = height * RATIO
+            Rectangle2D(0.0, 0.0, width, height)
         }
     }
 
@@ -125,9 +122,7 @@ class ImagePreviewController : Controller() {
 
         updateViewport(viewport)
 
-        // Need to track scaling factor so we can convert [Distance dragged across preview]
-        // into [Distance to move viewport across fullsize image]
-        scaleFactor = min(ImagePreviewView.WIDTH / viewport.width, ImagePreviewView.HEIGHT / viewport.height)
+        view.fitWindow()
     }
 
 }

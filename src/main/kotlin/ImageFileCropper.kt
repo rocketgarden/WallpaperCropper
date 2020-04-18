@@ -19,7 +19,8 @@ class ImageFileCropper {
     }
 
     fun setAsideImage(file: File): Boolean {
-        return moveFile(file, outputDir, LATER_DIR)
+        //return moveFile(file, outputDir, LATER_DIR)
+        return true
     }
 
     fun trashImage(file: File): Boolean {
