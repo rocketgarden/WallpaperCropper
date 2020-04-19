@@ -3,6 +3,7 @@ import javafx.scene.image.Image
 import javafx.scene.input.MouseEvent
 import tornadofx.Controller
 import tornadofx.warning
+import java.awt.Rectangle
 import java.io.File
 import java.io.FileInputStream
 import kotlin.math.min
@@ -24,10 +25,10 @@ class ImagePreviewController : Controller() {
 
     private var stream: FileInputStream? = null
     private var image: Image? = null
-    private var viewport: Rectangle2D = Rectangle2D(0.0, 0.0, 0.0, 0.0)
+    private var viewport: Rectangle2D = Rectangle2D(0.0,0.0,0.0,0.0)
 
-    val cropRect: Rectangle2D
-        get() = viewport.scale(1/scaleFactor) // reverse the scaling back to full size when we crop
+    val cropRect: Rectangle
+        get() = viewport.toIntRect() // reverse the scaling back to full size when we crop
 
     fun loadImage(file: File) {
         try {
@@ -46,8 +47,8 @@ class ImagePreviewController : Controller() {
     }
 
     fun onMouseDragged(event: MouseEvent) {
-        val xDelta = event.x - dragOriginX
-        val yDelta = event.y - dragOriginY
+        val xDelta = (event.x - dragOriginX)/scaleFactor
+        val yDelta = (event.y - dragOriginY)/scaleFactor
 
         dragOriginX = event.x
         dragOriginY = event.y
@@ -69,6 +70,10 @@ class ImagePreviewController : Controller() {
         dragOriginY = event.y
     }
 
+    fun onMouseDragEnded() {
+        updateViewport(viewport.round()) //snap the viewport to actual pixel boundaries when drag ends
+    }
+
     // Function to make sure the viewport doesn't go outside the bounds of the image
     private fun getValidDraggedViewport(
         image: Image,
@@ -77,13 +82,13 @@ class ImagePreviewController : Controller() {
         desiredYOffset: Double
     ): Rectangle2D {
         val minX = 0.0
-        val maxX = image.width*scaleFactor - originalViewport.width
+        val maxX = image.width - originalViewport.width
         // e.g. if viewport and image preview are same width, zero variance in x is exactly what we want
 
         val idealX = originalViewport.minX + desiredXOffset
 
         val minY = 0.0
-        val maxY = image.height*scaleFactor - originalViewport.height
+        val maxY = image.height - originalViewport.height
 
         val idealY = originalViewport.minY + desiredYOffset
 
@@ -98,22 +103,22 @@ class ImagePreviewController : Controller() {
         val h = image.height
 
         scaleFactor = min(ImagePreviewView.WIDTH / image.width, ImagePreviewView.HEIGHT / image.height)
-        println("scaleFactor: %.2f".format(scaleFactor))
 
         return if (w / h < RATIO) { //too tall
-            val width = w * scaleFactor
-            val height = width / RATIO
-            Rectangle2D(0.0, 0.0, width, height)
+            val height = w / RATIO
+            Rectangle2D(0.0, 0.0, w, height)
         } else {
-            val height = h * scaleFactor
-            val width = height * RATIO
-            Rectangle2D(0.0, 0.0, width, height)
+            val width = h * RATIO
+            Rectangle2D(0.0, 0.0, width, h)
         }
     }
 
     private fun updateViewport(viewport: Rectangle2D) {
         this.viewport = viewport
-        view.updateViewport(viewport)
+        val scaledViewport = viewport.scale(scaleFactor)
+        view.updateViewport(scaledViewport)
+
+        view.setCoordText("${viewport.minX}, ${viewport.minY}", "${scaledViewport.minX}, ${scaledViewport.minY}")
     }
 
     private fun updateImage(image: Image?, viewport: Rectangle2D) {

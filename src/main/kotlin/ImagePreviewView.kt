@@ -3,6 +3,7 @@ import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
+import javafx.scene.text.Text
 import tornadofx.View
 import tornadofx.pane
 
@@ -28,13 +29,22 @@ class ImagePreviewView : View() {
     private val previewRect = Rectangle(0.0,0.0,100.0,100.0).apply {
         stroke = Color.BLACK
         fill = Color.TRANSPARENT
-        strokeWidth = .5
+        strokeWidth = 0.0
     }
 
     private val topRect = Rectangle()
     private val bottomRect = Rectangle()
     private val leftRect = Rectangle()
     private val rightRect = Rectangle()
+
+    private val originalText = Text().apply {
+        layoutX = 10.0
+        layoutY = 10.0
+    }
+    private val scaledText = Text().apply {
+        layoutX = 10.0
+        layoutY = 30.0
+    }
 
     override val root = pane {
         add(imageView)
@@ -45,8 +55,12 @@ class ImagePreviewView : View() {
         add(leftRect)
         add(rightRect)
 
+//        add(originalText)
+//        add(scaledText)
+
         setOnMouseDragged { controller.onMouseDragged(it) }
         setOnMousePressed { controller.onMouseDragStarted(it) }
+        setOnMouseReleased { controller.onMouseDragEnded() }
     }
 
     init {
@@ -92,5 +106,10 @@ class ImagePreviewView : View() {
 
         bottomRect.y = viewport.maxY
         bottomRect.height = height - viewport.maxY
+    }
+
+    fun setCoordText(orig: String, scaled: String) {
+        originalText.text = orig
+        scaledText.text = scaled
     }
 }

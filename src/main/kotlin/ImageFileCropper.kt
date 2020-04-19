@@ -1,8 +1,8 @@
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.JpegWriter
-import javafx.geometry.Rectangle2D
 import tornadofx.runAsync
 import tornadofx.ui
+import java.awt.Rectangle
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -19,8 +19,8 @@ class ImageFileCropper {
     }
 
     fun setAsideImage(file: File): Boolean {
-        //return moveFile(file, outputDir, LATER_DIR)
-        return true
+        return moveFile(file, outputDir, LATER_DIR)
+//        return true
     }
 
     fun trashImage(file: File): Boolean {
@@ -35,7 +35,7 @@ class ImageFileCropper {
         return moveFile(file, outputDir, BACKUP_DIR)
     }
 
-    fun cropImage(file: File, rect: Rectangle2D) {
+    fun cropImage(file: File, rect: Rectangle) {
         val jpgName = file.name.substringBeforeLast(".") + ".jpg"
 
         val outFile = File(outputDir, "$CROPPED_DIR\\$jpgName")
@@ -43,7 +43,7 @@ class ImageFileCropper {
         println("Cropping to ${rect.minX}, ${rect.minY} by ${rect.maxX}, ${rect.maxY}")
         runAsync {
             try {
-                val canvas = ImmutableImage.create(rect.width.toInt(), rect.height.toInt())
+                val canvas = ImmutableImage.create(rect.width, rect.height)
                 val oldImage = ImmutableImage.loader().fromFile(file)
                 canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(JpegWriter.compression(95),  outFile)
                 // nb: the JpegWriter.NO_COMPRESSION doesn't seem to work properly and gives bad compression sometimes
@@ -70,6 +70,9 @@ class ImageFileCropper {
 
     private fun moveFile(file: File, baseDir: File, folderName: String): Boolean {
         val dest = File(baseDir, "$folderName\\${file.name}")
+        if (dest.exists()) { //rename fails if target exists. Overwriting is desired behavior
+            dest.delete()
+        }
         dest.parentFile.mkdirs()
         val moved = file.renameTo(dest)
         if (!moved) println("Warning: Couldn't move file ${file.path} to $dest")
