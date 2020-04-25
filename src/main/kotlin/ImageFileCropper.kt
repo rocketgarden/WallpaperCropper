@@ -1,5 +1,7 @@
 import com.sksamuel.scrimage.ImmutableImage
+import com.sksamuel.scrimage.nio.ImageWriter
 import com.sksamuel.scrimage.nio.JpegWriter
+import com.sksamuel.scrimage.nio.PngWriter
 import tornadofx.runAsync
 import tornadofx.ui
 import java.awt.Rectangle
@@ -36,16 +38,23 @@ class ImageFileCropper {
     }
 
     fun cropImage(file: File, rect: Rectangle) {
-        val jpgName = file.name.substringBeforeLast(".") + ".jpg"
+        var writer: ImageWriter = JpegWriter.compression(98)
 
-        val outFile = File(outputDir, "$CROPPED_DIR\\$jpgName")
+        val name = if(file.extension.equals("png", ignoreCase = true)) {
+            writer = PngWriter.MaxCompression
+            "${file.nameWithoutExtension}.png"
+        } else {
+            "${file.nameWithoutExtension}.jpg"
+        }
+
+        val outFile = File(outputDir, "$CROPPED_DIR\\$name")
         outFile.parentFile.mkdirs()
         println("Cropping to ${rect.minX}, ${rect.minY} by ${rect.maxX}, ${rect.maxY}")
         runAsync {
             try {
                 val canvas = ImmutableImage.create(rect.width, rect.height)
                 val oldImage = ImmutableImage.loader().fromFile(file)
-                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(JpegWriter.compression(95),  outFile)
+                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(writer,  outFile)
                 // nb: the JpegWriter.NO_COMPRESSION doesn't seem to work properly and gives bad compression sometimes
                 true
             } catch (e: Exception) {

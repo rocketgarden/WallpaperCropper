@@ -99,17 +99,19 @@ class ImagePreviewController : Controller() {
     }
 
     private fun buildInitialViewport(image: Image): Rectangle2D {
-        val w = image.width
-        val h = image.height
+        val imageWidth = image.width
+        val imageHeight = image.height
 
         scaleFactor = min(ImagePreviewView.WIDTH / image.width, ImagePreviewView.HEIGHT / image.height)
 
-        return if (w / h < RATIO) { //too tall
-            val height = w / RATIO
-            Rectangle2D(0.0, 0.0, w, height)
+        return if (imageWidth / imageHeight < RATIO) { //too tall
+            val previewHeight = imageWidth / RATIO
+            val yStart = (imageHeight - previewHeight)/2 // start preview centered, not topmost/leftmost
+            Rectangle2D(0.0, yStart, imageWidth, previewHeight)
         } else {
-            val width = h * RATIO
-            Rectangle2D(0.0, 0.0, width, h)
+            val previewWidth = imageHeight * RATIO
+            val xStart = (imageWidth - previewWidth)/2
+            Rectangle2D(xStart, 0.0, previewWidth, imageHeight)
         }
     }
 
