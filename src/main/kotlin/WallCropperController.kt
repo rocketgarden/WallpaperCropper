@@ -5,6 +5,11 @@ import java.io.File
 
 class WallCropperController : Controller() {
 
+    companion object {
+        const val PREF_KEY_INPUT_DIR = "KEY_INPUT_DIR"
+        const val PREF_KEY_OUTPUT_DIR = "KEY_OUTPUT_DIR"
+    }
+
     private val view: WallCropperView by inject()
     private val previewController: ImagePreviewController by inject()
     private val cropper: ImageFileCropper = ImageFileCropper()
@@ -16,6 +21,12 @@ class WallCropperController : Controller() {
     private val currentFile: File?
         get() = if (index < fileList.size) fileList[index] else null
 
+    fun init() {
+        val inputDir = config.string(PREF_KEY_INPUT_DIR, ".\\picdir")
+        val outputDir = config.string(PREF_KEY_OUTPUT_DIR, ".\\testout")
+        onBrowseDirectoryChosen(File(inputDir))
+        onOutputDirectoryChosen(File(outputDir))
+    }
 
     private fun nextImage() {
         index = (index + 1)
@@ -51,17 +62,15 @@ class WallCropperController : Controller() {
     }
 
     fun pickOutputDirectory() {
-        var dir: File? = null
-        if (fileList.isNotEmpty()) {
-            dir = fileList[0].parentFile
-        }
-        onOutputDirectoryChosen(chooseDirectory(initialDirectory = dir))
+        onOutputDirectoryChosen(chooseDirectory(initialDirectory = cropper.outputDir))
     }
 
     fun onOutputDirectoryChosen(file: File?) {
         file?.let {
             cropper.outputDir = it
             view.updateOutputDirText(it.path)
+            config[PREF_KEY_OUTPUT_DIR] = it.path
+            config.save()
         }
     }
 
@@ -77,6 +86,8 @@ class WallCropperController : Controller() {
         browseDir = file
         file?.let {
             view.updateBrowseDirText(it.path)
+            config[PREF_KEY_INPUT_DIR] = it.path
+            config.save()
         }
         file?.listFiles(::isValidImage)?.let {
             if (it.isNotEmpty()) {

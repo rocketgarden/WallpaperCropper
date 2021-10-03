@@ -34,7 +34,7 @@ class WallCropperView : View() {
             alignment = Pos.BASELINE_CENTER
 
             browseDirButton = button {
-                text = "Choose Browse Directory"
+                text = "Browse Directory"
                 action { mainController.pickBrowseDirectory() }
             }
             browseDirText = text("Not selected")
@@ -45,7 +45,7 @@ class WallCropperView : View() {
             alignment = Pos.BASELINE_CENTER
 
             outputDirButton = button {
-                text = "Choose Browse Directory"
+                text = "Output Directory"
                 action { mainController.pickOutputDirectory() }
             }
             outputDirText = text("Not selected")
@@ -90,9 +90,7 @@ class WallCropperView : View() {
 
     override fun onBeforeShow() {
         super.onBeforeShow()
-
-        mainController.onBrowseDirectoryChosen(File(".\\picdir"))
-        mainController.onOutputDirectoryChosen(File(".\\testout"))
+        mainController.init()
     }
 
     fun updateBrowseDirText(text: String) {

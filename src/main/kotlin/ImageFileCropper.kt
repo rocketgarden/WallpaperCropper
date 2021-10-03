@@ -51,7 +51,7 @@ class ImageFileCropper {
         outFile.parentFile.mkdirs()
         println("Cropping to ${rect.minX}, ${rect.minY} by ${rect.maxX}, ${rect.maxY}")
         runAsync {
-            try {
+            val success = try {
                 val canvas = ImmutableImage.create(rect.width, rect.height)
                 val oldImage = ImmutableImage.loader().fromFile(file)
                 canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(writer,  outFile)
@@ -61,19 +61,18 @@ class ImageFileCropper {
                 e.printStackTrace()
                 false
             }
-        } ui {success ->
-            val couldMove = if(success) {
+
+            if(success) {
                 backupImage(file)
                 true
             } else {
                 System.err.println("Couldn't crop image ${file.name}")
                 errorImage(file)
             }
-
-            if(!couldMove) {
+        } ui {success ->
+            if(!success) {
                 tornadofx.error("Couldn't properly finalize image ${file.name}")
             }
-
         }
     }
 
