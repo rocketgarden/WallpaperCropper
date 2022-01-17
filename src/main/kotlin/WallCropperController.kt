@@ -37,27 +37,37 @@ class WallCropperController : Controller() {
     }
 
     fun skipButtonPress() {
+        view.setButtonsEnabled(false)
         currentFile?.let {
             previewController.clearImage()
             cropper.setAsideImage(it)
             nextImage()
+            view.setButtonsEnabled(true)
         }
     }
 
     fun trashButtonPress() {
+        view.setButtonsEnabled(false)
         currentFile?.let {
             previewController.clearImage()
             cropper.trashImage(it)
             nextImage()
+            view.setButtonsEnabled(true)
         }
     }
 
     fun cropButtonPress() {
+        view.setButtonsEnabled(false)
         currentFile?.let {
-            val cropRect = previewController.cropRect
-            previewController.clearImage()
-            cropper.cropImage(it, cropRect)
+            if (previewController.isViewPortSameAsImage) {
+                previewController.clearImage()
+                cropper.skipCropProcessing(it)
+            } else {
+                previewController.clearImage()
+                cropper.cropImage(it, previewController.cropRect)
+            }
             nextImage()
+            view.setButtonsEnabled(true)
         }
     }
 

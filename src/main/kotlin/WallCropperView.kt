@@ -6,7 +6,6 @@ import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCodeCombination
 import javafx.scene.text.Text
 import tornadofx.*
-import java.io.File
 import java.util.concurrent.TimeUnit
 
 /**
@@ -103,6 +102,12 @@ class WallCropperView : View() {
 
     fun updateWindowTitle(text: String) {
         title = text
+    }
+
+    fun setButtonsEnabled(enabled: Boolean) {
+        skipDirButton.isDisable = !enabled
+        cropDirButton.isDisable = !enabled
+        trashDirButton.isDisable = !enabled
     }
 }
 

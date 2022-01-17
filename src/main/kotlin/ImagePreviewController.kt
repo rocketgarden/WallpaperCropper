@@ -2,7 +2,6 @@ import javafx.geometry.Rectangle2D
 import javafx.scene.image.Image
 import javafx.scene.input.MouseEvent
 import tornadofx.Controller
-import tornadofx.warning
 import java.awt.Rectangle
 import java.io.File
 import java.io.FileInputStream
@@ -25,18 +24,31 @@ class ImagePreviewController : Controller() {
 
     private var stream: FileInputStream? = null
     private var image: Image? = null
-    private var viewport: Rectangle2D = Rectangle2D(0.0,0.0,0.0,0.0)
+    private var viewport: Rectangle2D = Rectangle2D(0.0, 0.0, 0.0, 0.0)
 
     val cropRect: Rectangle
         get() = viewport.toIntRect() // reverse the scaling back to full size when we crop
 
+    val isViewPortSameAsImage: Boolean
+        get() = cropRect.width == image?.width?.toInt() && cropRect.height == image?.height?.toInt()
+
+
     fun loadImage(file: File) {
-        try {
-            stream = FileInputStream(file) // save this so we can close it
-            val image = Image(stream)
-            updateImage(image, buildInitialViewport(image))
-        } catch (e: Exception) {
-            warning("File error", "Could not open ${file.name}")
+        runAsync {
+            try {
+                stream = FileInputStream(file) // save this so we can close it
+                Image(stream)
+            } catch (e: Exception) {
+                print("File error \n Could not open ${file.name}")
+                e.printStackTrace()
+                null
+            }
+        } ui { image ->
+            if (image != null) {
+                updateImage(image, buildInitialViewport(image))
+            } else {
+                tornadofx.error("Error loading ${file.name}")
+            }
         }
     }
 
@@ -47,8 +59,8 @@ class ImagePreviewController : Controller() {
     }
 
     fun onMouseDragged(event: MouseEvent) {
-        val xDelta = (event.x - dragOriginX)/scaleFactor
-        val yDelta = (event.y - dragOriginY)/scaleFactor
+        val xDelta = (event.x - dragOriginX) / scaleFactor
+        val yDelta = (event.y - dragOriginY) / scaleFactor
 
         dragOriginX = event.x
         dragOriginY = event.y
@@ -106,11 +118,11 @@ class ImagePreviewController : Controller() {
 
         return if (imageWidth / imageHeight < RATIO) { //too tall
             val previewHeight = imageWidth / RATIO
-            val yStart = (imageHeight - previewHeight)/2 // start preview centered, not topmost/leftmost
+            val yStart = (imageHeight - previewHeight) / 2 // start preview centered, not topmost/leftmost
             Rectangle2D(0.0, yStart, imageWidth, previewHeight)
         } else {
             val previewWidth = imageHeight * RATIO
-            val xStart = (imageWidth - previewWidth)/2
+            val xStart = (imageWidth - previewWidth) / 2
             Rectangle2D(xStart, 0.0, previewWidth, imageHeight)
         }
     }

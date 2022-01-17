@@ -6,6 +6,7 @@ import tornadofx.runAsync
 import tornadofx.ui
 import java.awt.Rectangle
 import java.io.File
+import java.nio.file.Files
 import kotlin.math.roundToInt
 
 class ImageFileCropper {
@@ -29,6 +30,14 @@ class ImageFileCropper {
         return moveFile(file, outputDir, TRASH_DIR)
     }
 
+    fun skipCropProcessing(file: File): Boolean {
+        println("${file.name} unchanged, skipped cropping")
+        val ret = copyFile(file, outputDir, CROPPED_DIR)
+        backupImage(file)
+
+        return ret
+    }
+
     private fun errorImage(file: File): Boolean {
         return moveFile(file, outputDir, ERROR_DIR)
     }
@@ -40,7 +49,7 @@ class ImageFileCropper {
     fun cropImage(file: File, rect: Rectangle) {
         var writer: ImageWriter = JpegWriter.compression(98)
 
-        val name = if(file.extension.equals("png", ignoreCase = true)) {
+        val name = if (file.extension.equals("png", ignoreCase = true)) {
             writer = PngWriter.MaxCompression
             "${file.nameWithoutExtension}.png"
         } else {
@@ -49,12 +58,12 @@ class ImageFileCropper {
 
         val outFile = File(outputDir, "$CROPPED_DIR\\$name")
         outFile.parentFile.mkdirs()
-        println("Cropping to ${rect.minX}, ${rect.minY} by ${rect.maxX}, ${rect.maxY}")
+        println("Cropping ${file.name} to ${rect.minX}, ${rect.minY} by ${rect.maxX}, ${rect.maxY}")
         runAsync {
             val success = try {
                 val canvas = ImmutableImage.create(rect.width, rect.height)
                 val oldImage = ImmutableImage.loader().fromFile(file)
-                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(writer,  outFile)
+                canvas.overlay(oldImage, -rect.minX.roundToInt(), -rect.minY.roundToInt()).output(writer, outFile)
                 // nb: the JpegWriter.NO_COMPRESSION doesn't seem to work properly and gives bad compression sometimes
                 true
             } catch (e: Exception) {
@@ -62,15 +71,16 @@ class ImageFileCropper {
                 false
             }
 
-            if(success) {
+            if (success) {
+                println("Finished cropping ${file.name}")
                 backupImage(file)
                 true
             } else {
                 System.err.println("Couldn't crop image ${file.name}")
                 errorImage(file)
             }
-        } ui {success ->
-            if(!success) {
+        } ui { success ->
+            if (!success) {
                 tornadofx.error("Couldn't properly finalize image ${file.name}")
             }
         }
@@ -83,7 +93,27 @@ class ImageFileCropper {
         }
         dest.parentFile.mkdirs()
         val moved = file.renameTo(dest)
-        if (!moved) println("Warning: Couldn't move file ${file.path} to $dest")
+        if (moved) {
+            println("Moved ${file.name} to $dest")
+        } else {
+            println("Warning: Couldn't move file ${file.path} to $dest")
+        }
         return moved
+    }
+
+    private fun copyFile(file: File, baseDir: File, folderName: String): Boolean {
+        val dest = File(baseDir, "$folderName\\${file.name}")
+        if (dest.exists()) { //rename fails if target exists. Overwriting is desired behavior
+            dest.delete()
+        }
+        dest.parentFile.mkdirs()
+        val copied = try {
+            Files.copy(file.toPath(), dest.toPath())
+            true
+        } catch (e: Throwable) {
+            false
+        }
+        println("Copied ${file.name} to $dest")
+        return copied
     }
 }
