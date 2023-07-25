@@ -42,6 +42,8 @@ class ImagePreviewController : Controller() {
                 print("File error \n Could not open ${file.name}")
                 e.printStackTrace()
                 null
+            } finally {
+                stream?.close()
             }
         } ui { image ->
             if (image != null) {

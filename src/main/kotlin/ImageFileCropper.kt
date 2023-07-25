@@ -69,6 +69,8 @@ class ImageFileCropper {
             } catch (e: Exception) {
                 e.printStackTrace()
                 false
+            } finally {
+
             }
 
             if (success) {
@@ -94,7 +96,7 @@ class ImageFileCropper {
         dest.parentFile.mkdirs()
         val moved = file.renameTo(dest)
         if (moved) {
-            println("Moved ${file.name} to $dest")
+//            println("Moved ${file.name} to $dest")
         } else {
             println("Warning: Couldn't move file ${file.path} to $dest")
         }
@@ -113,7 +115,7 @@ class ImageFileCropper {
         } catch (e: Throwable) {
             false
         }
-        println("Copied ${file.name} to $dest")
+//        println("Copied ${file.name} to $dest")
         return copied
     }
 }
